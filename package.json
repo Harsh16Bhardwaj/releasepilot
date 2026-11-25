@@ -1,0 +1,45 @@
+{
+  "name": "releasepilot",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.13"
+  },
+  "scripts": {
+    "bite": "tsx src/bite/server.ts",
+    "build": "vite build --config vite.config.ts",
+    "bite:production": "tsx src/bite/server.ts --production",
+    "repo:setup": "tsx scripts/github-repo.ts",
+    "pilot": "tsx src/cli.ts start",
+    "doctor": "tsx src/cli.ts doctor",
+    "discover": "tsx src/cli.ts discover",
+    "analyze": "tsx src/cli.ts analyze",
+    "flagsmith:probe": "tsx src/cli.ts flagsmith-probe",
+    "gate": "tsx src/cli.ts gate",
+    "check": "tsc --noEmit",
+    "test": "tsx --test tests/*.test.ts"
+  },
+  "dependencies": {
+    "@flagsmith/nodejs": "9.5.0",
+    "ajv": "8.20.0",
+    "dotenv": "18.0.10",
+    "lucide-react": "1.80.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  },
+  "devDependencies": {
+    "@testing-library/react": "16.3.3",
+    "@testing-library/user-event": "14.6.13",
+    "@types/jsdom": "30.0.0",
+    "@types/node": "22.20.7",
+    "@types/react": "19.3.3",
+    "@types/react-dom": "19.3.0",
+    "@vitejs/plugin-react": "6.3.0",
+    "jsdom": "29.1.1",
+    "prettier": "3.10.1",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.8"
+  }
+}

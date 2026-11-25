@@ -1,0 +1,197 @@
+/* Regular controls and body copy stay readable at all viewport sizes. */
+.header nav button,
+.bag-button,
+.location-button strong,
+.restaurant p,
+.restaurant-meta,
+.about-link,
+.offer span,
+.menu-count,
+.search-box input,
+.sort-control,
+.category-tabs button,
+.quick-filters button,
+.food-info p,
+.food-rating,
+.add-button,
+.quantity,
+.cart-heading p,
+.empty-cart p,
+.cart-promise,
+.cart-footer,
+.cart-line strong,
+.cart-line small,
+.cart-line > b,
+.bill,
+.delivery-nudge,
+.checkout-button,
+.demo-note,
+.menu-note,
+.footer p,
+.footer > span,
+.detail-facts,
+.activity-feed > div,
+.activity-stats span {
+  font-size: 0.875rem;
+}
+.food-name {
+  font-size: 1rem;
+  line-height: 1.45;
+}
+.food-info p {
+  min-height: 46px;
+}
+.food-bottom > strong {
+  font-size: 1rem;
+}
+.restaurant-meta small,
+.food-tag,
+.eyebrow,
+.open-label,
+.offer-code,
+.lab-bar,
+.lab-mode,
+.version-toggle a,
+.hero-social small,
+.cart-heading p,
+.cart-promise,
+.cart-footer,
+.demo-note,
+.menu-note,
+.menu-count,
+.footer p,
+.footer > span {
+  font-size: 0.75rem;
+}
+.hero-content p {
+  font-size: 0.9375rem;
+}
+.hero-cta,
+.primary {
+  font-size: 0.875rem;
+}
+.hero-eyebrow {
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+.hero-social small {
+  font-size: 0.75rem;
+}
+.original .food-name {
+  font-size: 1rem;
+}
+.original .food-info p {
+  font-size: 0.875rem;
+}
+.original .hero-content p {
+  max-width: none;
+}
+.lab-bar {
+  letter-spacing: 0.7px;
+}
+@media (max-width: 800px) {
+  .lab-bar > span:first-child {
+    font-size: 0.65rem;
+  }
+  .version-toggle a {
+    font-size: 0.7rem;
+  }
+  .hero-content p {
+    font-size: 0.875rem;
+  }
+  .hero-eyebrow {
+    font-size: 0.625rem;
+  }
+  .location-button strong {
+    font-size: 0.8125rem;
+  }
+  .restaurant-meta {
+    font-size: 0.8125rem;
+  }
+  .hero-social {
+    display: none;
+  }
+  .hero-cta {
+    font-size: 0.8125rem;
+  }
+}
+@media (max-width: 600px) {
+  .lab-bar > span:first-child {
+    letter-spacing: 0.3px;
+    font-size: 0.55rem;
+  }
+  .lab-bar {
+    padding: 0 10px;
+  }
+  .version-toggle a {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+  .hero-content {
+    width: 78%;
+  }
+  .hero-eyebrow {
+    font-size: 0.55rem;
+  }
+  .hero-content p {
+    font-size: 0.8125rem;
+    max-width: 190px;
+  }
+  .hero-cta {
+    font-size: 0.75rem;
+    padding: 10px;
+  }
+  .location-button strong {
+    font-size: 0.75rem;
+    max-width: 135px;
+  }
+  .food-name {
+    font-size: 0.875rem;
+    min-height: 41px;
+  }
+  .food-info p {
+    font-size: 0.8125rem;
+    min-height: 42px;
+  }
+  .food-rating {
+    font-size: 0.75rem;
+  }
+  .add-button,
+  .quantity {
+    font-size: 0.8125rem;
+  }
+  .search-box input {
+    font-size: 0.8125rem;
+  }
+  .sort-control {
+    font-size: 0.75rem;
+  }
+  .sort-control select {
+    max-width: 102px;
+  }
+  .category-tabs button {
+    font-size: 0.8125rem;
+  }
+  .quick-filters button {
+    font-size: 0.75rem;
+  }
+  .restaurant p {
+    font-size: 0.8125rem;
+  }
+  .restaurant-meta {
+    font-size: 0.75rem;
+  }
+  .original .food-info p {
+    font-size: 0.8125rem;
+  }
+  .original .hero-content p {
+    max-width: none;
+    font-size: 0.8125rem;
+  }
+  .original .hero {
+    height: 235px;
+  }
+  .footer > span {
+    font-size: 0.75rem;
+  }
+}
