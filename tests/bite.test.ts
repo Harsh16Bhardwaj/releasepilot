@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import { BiteData } from "../src/bite/data.js";
 import { priceCart } from "../src/bite/menu.js";
 import { root } from "../src/config.js";
+import { runTraffic, validateOptions } from "../src/traffic/simulator.js";
 
 const dir = mkdtempSync(join(tmpdir(), "bite-test-"));
 const base = "http://127.0.0.1:3198";
@@ -141,6 +142,41 @@ test("foreign-origin event writes are rejected", async () => {
     body: "{}",
   });
   assert.equal(r.status, 403);
+});
+test("real simulated HTTP sessions produce scoped comparison metrics without impersonating Flagsmith", async () => {
+  const runId = randomUUID(),
+    from = Date.now() - 1;
+  const progress = await runTraffic(
+    validateOptions({
+      baseUrl: base,
+      mode: "comparison",
+      sessions: 20,
+      rate: 50,
+      seed: "http-proof",
+      scenario: "healthy",
+    }),
+    runId,
+    new AbortController().signal,
+    () => {},
+  );
+  assert.equal(progress.failed, 0);
+  assert.equal(progress.completed, 20);
+  assert.equal(progress.original, 10);
+  assert.equal(progress.redesign, 10);
+  const query = new URLSearchParams({
+    runId,
+    from: String(from),
+    to: String(Date.now()),
+    includePreview: "true",
+  });
+  const result = await (await fetch(base + "/api/metrics?" + query)).json();
+  assert.equal(result.cohorts.original.completed, 10);
+  assert.equal(result.cohorts.redesign.completed, 10);
+  assert.equal(result.quality.rolloutEligible, false);
+  assert.equal(result.quality.flagsmithOnly, false);
+  query.delete("includePreview");
+  const normal = await (await fetch(base + "/api/metrics?" + query)).json();
+  assert.equal(normal.quality.state, "missing");
 });
 test("finalized sessions cannot be revised by late events", () => {
   const db = new BiteData(join(dir, "metrics.sqlite"));

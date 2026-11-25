@@ -26,6 +26,20 @@ export class BiteData {
       CREATE INDEX IF NOT EXISTS session_events ON events(session_id,created);
       CREATE TABLE IF NOT EXISTS orders(id TEXT PRIMARY KEY,session_id TEXT NOT NULL,idempotency_key TEXT UNIQUE NOT NULL,cart TEXT NOT NULL,total INTEGER NOT NULL,created INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS requests(id INTEGER PRIMARY KEY,session_id TEXT,status INTEGER,duration_ms REAL,created INTEGER);`);
+    // Additive migrations preserve sessions collected before Traffic Lab existed.
+    const columns = this.db.prepare("PRAGMA table_info(sessions)").all() as {
+      name: string;
+    }[];
+    for (const name of ["run_id", "release_id", "stage_id"])
+      if (!columns.some((c) => c.name === name))
+        this.db.exec(`ALTER TABLE sessions ADD COLUMN ${name} TEXT`);
+    if (!columns.some((c) => c.name === "simulated"))
+      this.db.exec(
+        "ALTER TABLE sessions ADD COLUMN simulated INTEGER NOT NULL DEFAULT 0",
+      );
+    this.db
+      .exec(`CREATE TABLE IF NOT EXISTS metric_windows(key TEXT PRIMARY KEY,body TEXT NOT NULL);
+      CREATE INDEX IF NOT EXISTS session_windows ON sessions(run_id,created,completed);`);
   }
   createSession(
     visitor: string,
@@ -33,12 +47,33 @@ export class BiteData {
     source: string,
     build: string,
     preview = false,
+    context: {
+      runId?: string;
+      simulated?: boolean;
+      releaseId?: string;
+      stageId?: string;
+    } = {},
   ) {
     const id = randomUUID(),
       now = Date.now();
     this.db
-      .prepare("INSERT INTO sessions VALUES(?,?,?,?,?,?,?,NULL,?)")
-      .run(id, visitor, version, source, build, now, now, Number(preview));
+      .prepare(
+        "INSERT INTO sessions(id,visitor,version,source,build,created,last_seen,completed,preview,run_id,release_id,stage_id,simulated) VALUES(?,?,?,?,?,?,?,NULL,?,?,?,?,?)",
+      )
+      .run(
+        id,
+        visitor,
+        version,
+        source,
+        build,
+        now,
+        now,
+        Number(preview),
+        context.runId ?? null,
+        context.releaseId ?? null,
+        context.stageId ?? null,
+        Number(!!context.simulated),
+      );
     return this.session(id)!;
   }
   session(id: string) {
@@ -51,6 +86,8 @@ export class BiteData {
           build: string;
           preview: number;
           completed: number | null;
+          run_id: string | null;
+          simulated: number;
         }
       | undefined;
   }
@@ -92,6 +129,15 @@ export class BiteData {
         "UPDATE sessions SET completed=last_seen WHERE completed IS NULL AND last_seen<=?",
       )
       .run(now - 30_000).changes;
+  }
+  endSession(id: string) {
+    const s = this.session(id);
+    if (!s) throw new Error("Session not found");
+    this.db
+      .prepare(
+        "UPDATE sessions SET completed=last_seen WHERE id=? AND completed IS NULL",
+      )
+      .run(id);
   }
   order(
     session: string,

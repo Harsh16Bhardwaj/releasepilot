@@ -7,6 +7,9 @@
     "node": ">=22.13"
   },
   "scripts": {
+    "traffic": "tsx src/traffic/cli.ts",
+    "traffic:server": "tsx src/traffic/server.ts",
+    "traffic:verify": "tsx scripts/verify-traffic.ts",
     "bite": "tsx src/bite/server.ts",
     "build": "vite build --config vite.config.ts",
     "bite:production": "tsx src/bite/server.ts --production",

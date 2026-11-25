@@ -768,7 +768,8 @@ export function App() {
           </a>
           <p>Made for good food. Built for safer releases.</p>
           <span>
-            Local demo by ReleasePilot <span>·</span> No real orders
+            <a href="/lab">Traffic Lab</a> <span>·</span> Local demo by
+            ReleasePilot <span>·</span> No real orders
           </span>
         </footer>
       </main>

@@ -2,6 +2,8 @@
 
 Status: Sprint 1 foundation delivered; Flagsmith live gate remains pending. Owner authorized independent repository/site work while Docker downloads on 25 November 2026. Bite is implemented and locally verified, but its Flagsmith/browser integration gate is not marked passed. Evaluate live gate with `npm run gate -- --repo owner/repository`.
 
+26 November continuation: independent Sprint 3 implementation now includes separate Traffic Lab, run controls/history, seeded HTTP visitors, scoped metrics and a local comparison board at `/lab`. These do not pass the blocked live Flagsmith gate. Browser-level simulation and full release orchestration remain pending.
+
 | Sprint | Deliverable | Gate |
 |---|---|---|
 | 1 | Trusted agent workspace, SQLite records, discovery, Codex analysis, Flagsmith probe, diagnostics | Fresh real PR/AI proof and Flagsmith mutation/read-back/cohort/restore proof in the same configured scope |
@@ -24,4 +26,4 @@ The AI proposes. Deterministic code approves nothing on the human's behalf. Huma
 
 Use actual generated HTTP/browser events, prominently labelled simulated. Traffic scenario controls stay separate from the evaluator. GitHub polling uses 15s intervals, conditional requests, pagination and bounded backoff; handlers are application events, not git hooks. Dashboard streams persisted service state and reloads on reconnect. No automatic PR merge/code changes, paid services or silent replay fallback.
 
-Sprint 1 currently limits PR analysis to <=40 changed text files and <=180KB context. Unsupported changes block honestly. Continuous watching, approvals, rollout metrics windows and release progression are not implemented yet. Bite now exists with separate comparison previews, local sessions/events/orders and request measurements; release/stage attribution and rollback cache invalidation await the release engine. Discovery is an inventory, not a complete architecture understanding. Source context contains changed head files and selected root documentation; deeper dependency retrieval belongs to repository-context improvements before broad repository support.
+Sprint 1 currently limits PR analysis to <=40 changed text files and <=180KB context. Unsupported changes block honestly. Continuous watching, approvals and release progression are not implemented yet. Bite now includes comparison previews, local sessions/events/orders, request measurements and frozen metric windows; actual release/stage attribution and rollback cache invalidation await the release engine. Discovery is an inventory, not a complete architecture understanding. Source context contains changed head files and selected root documentation; deeper dependency retrieval belongs to repository-context improvements before broad repository support.

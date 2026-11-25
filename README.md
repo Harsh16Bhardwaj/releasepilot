@@ -1,6 +1,6 @@
 # ReleasePilot
 
-A local release agent for Flagsmith, with **Bite**, a working food-ordering website for testing interface releases. Sprint 1 agent foundations and independent Sprint 2 website work are implemented. Flagsmith's live proof and the autonomous rollout loop remain pending.
+A local release agent for Flagsmith, with **Bite**, a working food-ordering website, and **Traffic Lab**, a separate simulated-visitor service and comparison board. Agent foundations and independent website/traffic/metrics work are implemented. Flagsmith's live proof and the autonomous rollout loop remain pending.
 
 ## Run Bite now
 
@@ -22,7 +22,32 @@ Normal traffic receives actual Flagsmith assignment when configured; otherwise i
 
 Production mode: `npm run build`, then `npm run bite:production`. Builds include commit/dirty metadata. Development or dirty builds are not reported as ready for an approved rollout. Runtime data lives under `.runtime/bite/` and is ignored by Git.
 
-## Start from a fresh checkout (Windows / Node >=22.13)
+## Traffic Lab
+
+Run Bite in one terminal and the separate simulator service in another:
+
+```powershell
+npm run bite
+npm run traffic:server
+```
+
+Open http://127.0.0.1:3100/lab to start/stop healthy, neutral or degraded visitor scenarios and inspect live comparison metrics and persisted run history. On this machine use `npm.cmd` instead of the PowerShell `npm` wrapper.
+
+Comparison mode explicitly previews original/redesign at 50/50 and is excluded from rollout evidence. Flagsmith mode asks Bite to choose actual visitor versions; absent credentials it honestly produces only the original. Simulation settings live in the separate Traffic Lab database and are never sent to the metrics evaluator. Both modes generate real local HTTP requests and clearly labelled simulated sessions.
+
+Standalone simulator (does not need the lab service):
+
+```powershell
+npm.cmd run traffic -- --scenario healthy --mode comparison --sessions 120 --rate 5 --seed 42
+```
+
+Stable seeded identities and decisions repeat across runs; observed network latency is naturally variable. Explicit simulated session endings or 30 seconds of inactivity finalize sessions. Metrics use completed sessions, count cart conversions once per session, distinguish missing/one-cohort/stale data, and freeze closed windows. Errors mean HTTP 5xx; P95 uses measured API request durations. Comparison does not establish real human preference.
+
+`GET /api/metrics?from=<epoch-ms>&to=<epoch-ms>&runId=<id>&includePreview=true` reads a bounded cohort window. Preview inclusion must be explicit; default queries exclude it. Optional `build`, `releaseId` and `stageId` narrow the scope. Release/stage fields are reserved; the pending release engine must assign them before any window can qualify as scoped rollout evidence. Empty data is not zero-percent failures. Frozen historical metrics expose their age instead of pretending to remain fresh.
+
+Run history persists in `.runtime/traffic/lab.sqlite`. Only one run can be active. Stop cancels scheduled visits and outstanding requests. A hard-killed run is marked interrupted on the next service start, without automatically resuming it. HTTP-only simulation is implemented; browser automation remains unavailable in Work settings.
+
+## Agent setup
 
 ```powershell
 npm ci --ignore-scripts

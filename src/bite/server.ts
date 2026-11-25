@@ -12,6 +12,7 @@ import { Flagsmith } from "@flagsmith/nodejs";
 import { root, redact } from "../config.js";
 import { menu, categories, priceCart } from "./menu.js";
 import { BiteData, type Version } from "./data.js";
+import { metrics } from "./metrics.js";
 
 const port = Number(process.env.BITE_PORT || 3100);
 const production = process.argv.includes("--production");
@@ -104,15 +105,21 @@ const vite = !production
   : null;
 const server = createServer(async (req, res) => {
   const started = performance.now();
+  let requestSession = session(req)?.id ?? null;
   res.on("finish", () => {
-    if (req.url?.startsWith("/api/") && req.url != "/api/health") {
+    if (
+      req.url &&
+      ["/api/events", "/api/menu", "/api/orders", "/api/session/end"].includes(
+        req.url.split("?")[0],
+      )
+    ) {
       try {
         db.db
           .prepare(
             "INSERT INTO requests(session_id,status,duration_ms,created) VALUES(?,?,?,?)",
           )
           .run(
-            session(req)?.id || null,
+            requestSession,
             res.statusCode,
             performance.now() - started,
             Date.now(),
@@ -145,7 +152,11 @@ const server = createServer(async (req, res) => {
         service: "bite",
         ...build,
         flagsmith: flagsHealth,
-        rolloutReady: !!sdk && !build.dirty && build.commit !== "uncommitted",
+        rolloutReady:
+          !!sdk &&
+          flagsHealth === "Connected" &&
+          !build.dirty &&
+          build.commit !== "uncommitted",
         simulation: true,
       });
       return;
@@ -190,19 +201,97 @@ const server = createServer(async (req, res) => {
           source,
           build.commit,
           !!mode,
+          {
+            runId:
+              typeof req.headers["x-bite-run"] === "string" &&
+              /^[a-f0-9-]{36}$/.test(req.headers["x-bite-run"])
+                ? req.headers["x-bite-run"]
+                : undefined,
+            simulated: req.headers["x-bite-simulation"] === "true",
+          },
         );
         res.setHeader("Set-Cookie", [
           `bite_visitor=${visitor}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000`,
           `${mode ? "bite_preview" : "bite_session"}=${current.id}; Path=/; HttpOnly; SameSite=Strict`,
         ]);
       }
+      requestSession = current.id;
       reply(res, 200, {
         id: current.id,
         version: current.version,
         source: current.source,
         preview: !!current.preview,
         build: current.build,
+        simulated: !!current.simulated,
+        runId: current.run_id,
       });
+      return;
+    }
+    if (url.pathname === "/api/session/end" && req.method === "POST") {
+      const s = session(req);
+      if (!s) {
+        reply(res, 409, { error: "Session not found" });
+        return;
+      }
+      db.endSession(s.id);
+      reply(res, 200, { completed: true });
+      return;
+    }
+    if (url.pathname === "/api/metrics" && req.method === "GET") {
+      reply(
+        res,
+        200,
+        metrics(db, {
+          from: Number(url.searchParams.get("from")),
+          to: Number(url.searchParams.get("to")),
+          ...(url.searchParams.has("runId")
+            ? { runId: url.searchParams.get("runId")! }
+            : {}),
+          ...(url.searchParams.has("build")
+            ? { build: url.searchParams.get("build")! }
+            : {}),
+          ...(url.searchParams.has("releaseId")
+            ? { releaseId: url.searchParams.get("releaseId")! }
+            : {}),
+          ...(url.searchParams.has("stageId")
+            ? { stageId: url.searchParams.get("stageId")! }
+            : {}),
+          includePreview: url.searchParams.get("includePreview") === "true",
+        }),
+      );
+      return;
+    }
+    if (url.pathname.startsWith("/api/traffic/")) {
+      const path = url.pathname.slice("/api/traffic".length);
+      if (
+        !["/status", "/runs", "/start", "/stop"].includes(path) ||
+        !(
+          (req.method === "GET" && ["/status", "/runs"].includes(path)) ||
+          (req.method === "POST" && ["/start", "/stop"].includes(path))
+        )
+      ) {
+        reply(res, 404, { error: "Unknown traffic operation" });
+        return;
+      }
+      try {
+        const forwarded = req.method === "POST" ? await body(req) : undefined;
+        const response = await fetch(
+          `http://127.0.0.1:${process.env.TRAFFIC_PORT || 3200}${path}`,
+          {
+            method: req.method,
+            headers: { "Content-Type": "application/json" },
+            ...(forwarded ? { body: JSON.stringify(forwarded) } : {}),
+            signal: AbortSignal.timeout(5000),
+            redirect: "error",
+          },
+        );
+        reply(res, response.status, await response.json());
+      } catch {
+        reply(res, 503, {
+          error:
+            "Traffic Lab is not running. Start npm run traffic:server in another terminal.",
+        });
+      }
       return;
     }
     if (url.pathname === "/api/events" && req.method === "POST") {
