@@ -20,6 +20,7 @@
     "analyze": "tsx src/cli.ts analyze",
     "flagsmith:probe": "tsx src/cli.ts flagsmith-probe",
     "flagsmith:setup": "tsx scripts/setup-flagsmith.ts",
+    "flagsmith:verify-app": "tsx scripts/verify-flagsmith-app.ts",
     "gate": "tsx src/cli.ts gate",
     "check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"

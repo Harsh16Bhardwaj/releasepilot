@@ -144,6 +144,34 @@ export function App() {
     orderKey.current = crypto.randomUUID();
   }, [cart]);
   useEffect(() => {
+    if (preview) return;
+    let alive = true,
+      inFlight = false;
+    const timer = setInterval(async () => {
+      if (!alive || inFlight || document.visibilityState !== "visible") return;
+      inFlight = true;
+      try {
+        const check = await api("/api/session/check");
+        if (check.refresh) {
+          const next = await api("/api/session");
+          if (alive) {
+            setSession(next);
+            setToast("The kitchen has returned to the original experience.");
+            await event("page_view");
+          }
+        }
+      } catch {
+        /* keep current page; user actions expose connection errors */
+      } finally {
+        inFlight = false;
+      }
+    }, 5000);
+    return () => {
+      alive = false;
+      clearInterval(timer);
+    };
+  }, []);
+  useEffect(() => {
     localStorage.setItem("bite.saved", JSON.stringify(saved));
   }, [saved]);
   useEffect(() => {

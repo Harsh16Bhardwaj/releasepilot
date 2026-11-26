@@ -248,7 +248,7 @@ export async function probe(cfg: Config, store: Store, restoreOnly = false) {
               throw new Error(
                 "SDK exposure outside expected tolerance; propagation or overrides need review",
               );
-            await delay(2000);
+            await delay(15_000);
           }
           if ([...previous].some((id) => !cohort.includes(id)))
             throw new Error("Earlier cohort lost during expansion");
@@ -306,7 +306,7 @@ export async function probe(cfg: Config, store: Store, restoreOnly = false) {
         });
         return;
       }
-      if (i < 2) await delay(2000);
+      if (i < 2) await delay(15_000);
     }
     throw new Error(
       "Restored rules but SDK recovery is unconfirmed; retain incident and snapshot",

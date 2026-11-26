@@ -9,13 +9,15 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, createReadStream } from "node:fs";
 import { join, resolve, extname, sep } from "node:path";
 import { Flagsmith } from "@flagsmith/nodejs";
-import { root, redact,config } from "../config.js";
+import { root, redact, config } from "../config.js";
 import { menu, categories, priceCart } from "./menu.js";
 import { BiteData, type Version } from "./data.js";
 import { metrics } from "./metrics.js";
 
 const port = Number(process.env.BITE_PORT || 3100);
 const production = process.argv.includes("--production");
+let lastSdkUpdate: number | null = null;
+let sdkRefreshFailed = false;
 const db = new BiteData(
   process.env.BITE_DATABASE || join(root, ".runtime", "bite", "bite.sqlite"),
 );
@@ -43,18 +45,23 @@ const build = (() => {
     };
   }
 })();
-const sdk = process.env.FLAGSMITH_SDK_KEY && process.env.BITE_DISABLE_FLAGSMITH!=='true'
-  ? new Flagsmith({
-      environmentKey: process.env.FLAGSMITH_SDK_KEY,
-      apiUrl:config().flagsmith.sdkUrl,
-      enableLocalEvaluation: true,
-      enableAnalytics: false,
-      enableEvents: false,
-      retries: 0,
-      requestTimeoutSeconds: 3,
-      environmentRefreshIntervalSeconds: 5,
-    })
-  : null;
+const sdk =
+  process.env.FLAGSMITH_SDK_KEY && process.env.BITE_DISABLE_FLAGSMITH !== "true"
+    ? new Flagsmith({
+        environmentKey: process.env.FLAGSMITH_SDK_KEY,
+        apiUrl: config().flagsmith.sdkUrl,
+        enableLocalEvaluation: true,
+        enableAnalytics: false,
+        enableEvents: false,
+        retries: 0,
+        requestTimeoutSeconds: 3,
+        environmentRefreshIntervalSeconds: config().flagsmith.refreshSeconds,
+        onEnvironmentChange: (error) => {
+          sdkRefreshFailed = !!error;
+          if (!error) lastSdkUpdate = Date.now();
+        },
+      })
+    : null;
 let flagsHealth = sdk
   ? "Not evaluated yet"
   : "Not configured — serving original safely";
@@ -130,6 +137,25 @@ const server = createServer(async (req, res) => {
   });
   try {
     const url = new URL(req.url || "/", `http://127.0.0.1:${port}`);
+    // A downward flag change may end an existing treatment session. Keep its old
+    // events immutable and start an original session on the next session request.
+    const existing = session(req);
+    if (
+      sdk &&
+      !preview(req) &&
+      existing?.version === "redesign" &&
+      existing.completed === null &&
+      url.pathname.startsWith("/api/") &&
+      url.pathname !== "/api/metrics"
+    ) {
+      try {
+        const flags = await sdk.getIdentityFlags(existing.visitor);
+        if (!flags.isFeatureEnabled("menu_redesign"))
+          db.endSession(existing.id, "flag_disabled");
+      } catch {
+        flagsHealth = "Evaluation failed — retaining cached session";
+      }
+    }
     if (req.method !== "GET" && req.method !== "HEAD") {
       const origin = req.headers.origin;
       if (
@@ -151,13 +177,50 @@ const server = createServer(async (req, res) => {
         service: "bite",
         ...build,
         flagsmith: flagsHealth,
+        lastSdkUpdate,
+        sdkRefreshFailed,
         rolloutReady:
           !!sdk &&
+          !sdkRefreshFailed &&
           flagsHealth === "Connected" &&
           !build.dirty &&
           build.commit !== "uncommitted",
         simulation: true,
       });
+      return;
+    }
+    if (url.pathname === "/api/flags" && req.method === "GET") {
+      if (!sdk) {
+        reply(res, 503, { error: "Flagsmith SDK is not configured" });
+        return;
+      }
+      const env = await sdk.getEnvironment();
+      const segment = env.project.segments.find(
+        (s) => s.id === Number(config().flagsmith.rolloutSegmentId),
+      );
+      const rule = segment?.rules[0]?.conditions[0];
+      reply(res, 200, {
+        flag: "menu_redesign",
+        source: "flagsmith",
+        percentage:
+          rule?.operator === "PERCENTAGE_SPLIT" ? Number(rule.value) : null,
+        lastSdkUpdate,
+        sdkRefreshFailed,
+        refreshSeconds: config().flagsmith.refreshSeconds,
+      });
+      return;
+    }
+    if (url.pathname === "/api/session/check" && req.method === "GET") {
+      let refresh = false;
+      if (sdk && !preview(req) && existing?.version === "redesign")
+        try {
+          refresh = !(
+            await sdk.getIdentityFlags(existing.visitor)
+          ).isFeatureEnabled("menu_redesign");
+        } catch {
+          /* retain session until state can be verified */
+        }
+      reply(res, 200, { refresh });
       return;
     }
     if (url.pathname === "/api/menu" && req.method === "GET") {
@@ -167,6 +230,7 @@ const server = createServer(async (req, res) => {
     if (url.pathname === "/api/session" && req.method === "GET") {
       const mode = preview(req);
       let current = session(req);
+      const previousSessionEndReason = current?.completion_reason ?? null;
       if (
         !current ||
         current.completed !== null ||
@@ -223,6 +287,7 @@ const server = createServer(async (req, res) => {
         build: current.build,
         simulated: !!current.simulated,
         runId: current.run_id,
+        previousSessionEndReason,
       });
       return;
     }

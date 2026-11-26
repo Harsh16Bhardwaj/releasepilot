@@ -82,7 +82,7 @@ if (values.help || !values.repo) {
           deployment: !!cfg.deploymentUrl,
           metrics: !!cfg.metricsUrl,
         },
-        gate: gate(store, cfg),
+        gate: await gate(store, cfg, github),
       };
       store.record("doctor", report);
       store.report("doctor", report);
@@ -129,7 +129,7 @@ if (values.help || !values.repo) {
     } else if (action === "flagsmith-probe") {
       print(await probe(cfg, store, !!values.restore));
     } else if (action === "gate") {
-      const result = gate(store, cfg);
+      const result = await gate(store, cfg, github);
       store.report("sprint-1-gate", result);
       print(result);
       if (!result.passed) process.exitCode = 2;
@@ -143,7 +143,11 @@ if (values.help || !values.repo) {
   }
 }
 
-function gate(store: Store, cfg: ReturnType<typeof config>) {
+async function gate(
+  store: Store,
+  cfg: ReturnType<typeof config>,
+  github: GitHub,
+) {
   const gh = store.latest("github_proof"),
     ai = store.latest("analysis"),
     flags = store.latest("flagsmith_proof"),
@@ -151,8 +155,16 @@ function gate(store: Store, cfg: ReturnType<typeof config>) {
     restored = store.latest("probe_restored");
   const fresh = (date: unknown) =>
     typeof date === "string" && Date.now() - Date.parse(date) < 24 * 3600_000;
+  let currentHead: string | null = null;
+  if (gh)
+    try {
+      currentHead = (await github.get(`/repos/${github.repo}/pulls/${gh.pr}`))
+        .head.sha;
+    } catch {
+      /* a failed current-state check must not pass the gate */
+    }
   const checks = {
-    realPR: !!gh && fresh(gh.at),
+    realPR: !!gh && fresh(gh.at) && currentHead === gh.headSha,
     freshCodexAnalysis:
       !!ai &&
       fresh(ai.analyzedAt) &&

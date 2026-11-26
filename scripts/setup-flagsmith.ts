@@ -38,6 +38,10 @@ console.log(
   }),
 );
 const projects = await all("projects/");
+if (org.role !== "ADMIN")
+  throw new Error(
+    "Provisioning requires admin access to the dedicated ReleasePilot organisation",
+  );
 let project = projects.find(
   (p) => p.name === "ReleasePilot" && p.organisation === org.id,
 );
@@ -124,6 +128,10 @@ for (const name of ["releasepilot_probe", "menu_redesign"]) {
       s.feature_segment?.segment?.id === segment.id,
   );
   if (!state) {
+    if (Number(segment.rules?.[0]?.conditions?.[0]?.value) !== 0)
+      throw new Error(
+        "Refusing to publish a new override for an existing nonzero segment. Review targeting explicitly first.",
+      );
     const override = {
       enabled: true,
       feature_state_value: { type: "unicode", string_value: "redesign" },

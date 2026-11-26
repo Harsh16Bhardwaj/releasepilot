@@ -1,5 +1,7 @@
 # Sprint gates and implementation handoff
 
+26 November Cloud milestone: isolated Cloud Free provisioning, SDK/management targeting proof and restoration passed. Fresh Codex analysis of this repository's PR #1 passed schema/evidence validation; its classification was blocked/manual because infrastructure changes are not safely covered by the menu flag. The foundation gate checks the current remote PR head before passing. Real Bite assignment and active-session recovery also passed; browser screenshot QA remains unavailable. Sprint 4's approved autonomous controller is not yet implemented or passed. This supersedes the initial pending Cloud status below.
+
 Status: Sprint 1 foundation delivered; Flagsmith live gate remains pending. Owner authorized independent repository/site work while Docker downloads on 25 November 2026. Bite is implemented and locally verified, but its Flagsmith/browser integration gate is not marked passed. Evaluate live gate with `npm run gate -- --repo owner/repository`.
 
 26 November continuation: independent Sprint 3 implementation now includes separate Traffic Lab, run controls/history, seeded HTTP visitors, scoped metrics and a local comparison board at `/lab`. These do not pass the blocked live Flagsmith gate. Browser-level simulation and full release orchestration remain pending.
