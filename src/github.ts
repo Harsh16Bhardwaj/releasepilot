@@ -101,7 +101,7 @@ export class GitHub {
     );
     if (changes.length !== pr.changed_files)
       throw new Error("Incomplete PR file list; analysis blocked.");
-    const files = [];
+    const files: {path:string;status:string;patch:string;head:{path:string;sha:string;content:string}|null}[] = [];
     for (const change of changes) {
       if (!change.patch)
         throw new Error(
