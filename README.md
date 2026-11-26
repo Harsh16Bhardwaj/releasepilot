@@ -65,7 +65,7 @@ On this Windows installation PowerShell resolves `npm` to a wrapper that strips 
 
 `npm run pilot -- --repo owner/repository` starts diagnostics and reports the current gate. In Sprint 1 it exits with an explicit not-yet-implemented watcher message. It does not silently claim to start the full product. No command needs this conversation.
 
-Use a real public PR with <=40 changed text files and <=180KB context. GitHub's anonymous rate limit is small; optionally configure a read-only token. The analysis command reads metadata, diff and changed head files plus selected root documents. It rejects missing/binary patches and oversized bundles rather than inventing findings. Only analyze repositories you intend to inspect.
+Use a real public PR with <=40 changed text files and <=320KB UTF-8 context. Local Git Credential Manager authentication is reused automatically; a read-only token is optional. The analysis command reads metadata, diff and complete changed head files plus selected root documents, removing duplicate baseline documents when their changed head file is already included. Missing/binary patches and oversized bundles are rejected. Only analyze repositories you intend to inspect.
 
 ## Flagsmith setup and live proof
 

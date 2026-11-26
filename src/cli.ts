@@ -169,6 +169,7 @@ async function gate(
       !!ai &&
       fresh(ai.analyzedAt) &&
       ai.headSha === gh?.headSha &&
+      currentHead === ai.headSha &&
       ai.pr === gh?.pr,
     flagsmithMutationReadbackCohortsAndRestore:
       !!flags &&

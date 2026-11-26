@@ -130,6 +130,9 @@ export class GitHub {
       mergeSha: pr.merge_commit_sha,
       profile: {
         ...profile,
+        files: profile.files.filter(
+          (f) => !files.some((changed) => changed.path === f.path),
+        ),
         paths: profile.paths.slice(0, 300),
         pathInventoryLimited: profile.paths.length > 300,
       },
@@ -145,9 +148,10 @@ export class GitHub {
         "No Flagsmith inventory supplied to this analysis until live connection is configured.",
       ],
     };
-    if (JSON.stringify(result).length > 180_000)
+    const bytes = Buffer.byteLength(JSON.stringify(result), "utf8");
+    if (bytes > 320_000)
       throw new Error(
-        "Context exceeds supported size; manual review required.",
+        `Context is ${bytes} bytes, above the 320KB supported budget; manual review required.`,
       );
     return result;
   }
