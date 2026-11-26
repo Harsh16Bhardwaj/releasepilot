@@ -28,7 +28,7 @@ export class FlagsmithManagement {
   constructor(private cfg: Config) {}
   async request(path: string, method = 'GET', body?: unknown) {
     const r = await fetch(new URL(path,this.cfg.flagsmith.url), {method, redirect:'error', signal:AbortSignal.timeout(15_000),
-      headers:{Authorization:`Api-Key ${this.cfg.flagsmith.apiKey}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
+      headers:{Authorization:`${this.cfg.flagsmith.authScheme} ${this.cfg.flagsmith.apiKey}`,'Content-Type':'application/json'},...(body?{body:JSON.stringify(body)}:{})});
     if(!r.ok) throw new Error(`Flagsmith HTTP ${r.status}; check API access, IDs and dedicated environment configuration.`);
     return r.json() as Promise<any>;
   }

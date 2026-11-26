@@ -69,7 +69,7 @@ Use a real public PR with <=40 changed text files and <=180KB context. GitHub's 
 
 ## Flagsmith setup and live proof
 
-Use a dedicated disposable project/environment. **Self-hosted Flagsmith is now the owner's preferred setup**, with free Cloud as a fallback. For self-hosting set `FLAGSMITH_MANAGEMENT_URL=http://localhost:8000/api/v1/`. Do not add a card, enable overages or upgrade to unblock this project. Create the organization API key through the local dashboard and a **server-side SDK key** for local evaluation. Organization/environment keys are distinct. Never commit them.
+Use a dedicated disposable project/environment. **Flagsmith Cloud Free is now the selected path**; self-hosting remains a fallback. Cloud uses `FLAGSMITH_MANAGEMENT_URL=https://api.flagsmith.com/api/v1/`; self-hosting uses `http://localhost:8000/api/v1/`. Do not add a card, enable overages or upgrade to unblock this project. Organisation API keys use `FLAGSMITH_AUTH_SCHEME=Api-Key`; user API tokens use `Token`. Both stay in local `.env`. A separate **server-side SDK key** is needed for local evaluation and can be provisioned through authorized account setup. Management/environment/SDK keys are distinct. Never commit them.
 
 1. Create a disabled test feature named `releasepilot_probe` (or configure `FLAGSMITH_PROBE_FLAG`).
 2. In that feature's target environment create a **feature-specific segment** with exactly one Percentage Split condition, no other conditions, and an enabled override for this feature. Start at 0%.

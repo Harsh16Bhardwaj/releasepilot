@@ -19,10 +19,12 @@ export function config(env: NodeJS.ProcessEnv = process.env) {
     throw new Error('Flagsmith URL requires HTTPS or local HTTP.');
   }
   if (managementUrl.username || managementUrl.password || managementUrl.search || managementUrl.hash) throw new Error('Credentials/query parameters are forbidden in Flagsmith URL.');
+  const authScheme=env.FLAGSMITH_AUTH_SCHEME || 'Api-Key';
+  if(!['Api-Key','Token'].includes(authScheme))throw new Error('FLAGSMITH_AUTH_SCHEME must be Api-Key or Token');
   return {
     githubToken: env.GITHUB_TOKEN || '', codexBin: env.CODEX_BIN || 'codex',
     codexTimeoutMs: integer('CODEX_TIMEOUT_SECONDS', 180) * 1000,
-    flagsmith: { url: managementUrl.href.replace(/\/?$/, '/'), apiKey: env.FLAGSMITH_API_KEY || '',
+    flagsmith: { url: managementUrl.href.replace(/\/?$/, '/'), authScheme, apiKey: env.FLAGSMITH_API_KEY || '',
       environmentKey: env.FLAGSMITH_ENVIRONMENT_KEY || '', sdkKey: env.FLAGSMITH_SDK_KEY || '',
       projectId: env.FLAGSMITH_PROJECT_ID || '', segmentId: env.FLAGSMITH_PROBE_SEGMENT_ID || '',
       flag: env.FLAGSMITH_PROBE_FLAG || 'releasepilot_probe', disposable: env.FLAGSMITH_PROBE_DISPOSABLE === 'true' },

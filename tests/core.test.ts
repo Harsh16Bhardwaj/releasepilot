@@ -20,6 +20,9 @@ test('Codex inherits OS/auth location but no integration or billing credentials'
   assert.equal(redact('ghp_1234567890'), '[REDACTED]');
 });
 test('configuration rejects remote plaintext credential transport',()=>{
+  assert.equal(config({FLAGSMITH_AUTH_SCHEME:'Token'}).flagsmith.authScheme,'Token');
+  assert.equal(config({}).flagsmith.authScheme,'Api-Key');
+  assert.throws(()=>config({FLAGSMITH_AUTH_SCHEME:'Bearer'}));
   assert.throws(()=>config({FLAGSMITH_MANAGEMENT_URL:'http://example.com/api/v1/'}));
   assert.throws(()=>config({FLAGSMITH_MANAGEMENT_URL:'https://user:pass@example.com/'}));
   assert.doesNotThrow(()=>config({FLAGSMITH_MANAGEMENT_URL:'http://localhost:8000/api/v1/'}));
