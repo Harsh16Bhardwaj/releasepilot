@@ -1,6 +1,6 @@
 # ReleasePilot
 
-A local release agent for Flagsmith, with **Bite**, a working food-ordering website, and **Traffic Lab**, a separate simulated-visitor service and comparison board. Agent foundations and independent website/traffic/metrics work are implemented. Flagsmith's live proof and the autonomous rollout loop remain pending.
+A local release agent for Flagsmith, with **Bite**, a working food-ordering website, and **Traffic Lab**, a separate simulated-visitor service and comparison board. Agent foundations, website, traffic/metrics and live Flagsmith Cloud integration are implemented. Percentage targeting, SDK verification, restoration and active-session recovery have been demonstrated. The human-approved autonomous rollout controller remains the next phase.
 
 ## Run Bite now
 
@@ -65,9 +65,22 @@ On this Windows installation PowerShell resolves `npm` to a wrapper that strips 
 
 `npm run pilot -- --repo owner/repository` starts diagnostics and reports the current gate. In Sprint 1 it exits with an explicit not-yet-implemented watcher message. It does not silently claim to start the full product. No command needs this conversation.
 
-Use a real public PR with <=40 changed text files and <=180KB context. GitHub's anonymous rate limit is small; optionally configure a read-only token. The analysis command reads metadata, diff and changed head files plus selected root documents. It rejects missing/binary patches and oversized bundles rather than inventing findings. Only analyze repositories you intend to inspect.
+Use a real public PR with <=40 changed text files and <=320KB UTF-8 context. Local Git Credential Manager authentication is reused automatically; a read-only token is optional. The analysis command reads metadata, diff and complete changed head files plus selected root documents, removing duplicate baseline documents when their changed head file is already included. Missing/binary patches and oversized bundles are rejected. Only analyze repositories you intend to inspect.
 
 ## Flagsmith setup and live proof
+
+```powershell
+npm.cmd run flagsmith:setup
+npm.cmd run flagsmith:probe -- --repo Harsh16Bhardwaj/releasepilot
+# With Bite running, verify actual app assignments and active-session recovery:
+npm.cmd run flagsmith:verify-app
+```
+
+Provisioning creates a separate Free organisation/project, leaving existing projects untouched. Generated SDK/environment settings stay in ignored `.runtime/flagsmith/connection.env`; nonempty local environment settings take precedence. The management endpoint is `api.flagsmith.com`, and the SDK defaults to `edge.api.flagsmith.com`. Separate endpoints matter: the management-host evaluation document lagged during testing. Cloud v2 override creation uses numeric environment IDs and typed values. Setup reruns preserve existing targets and refuse publishing a missing override for a nonzero segment.
+
+The app integration proof temporarily changes the dedicated `menu_redesign` segment from 0% to 50% and restores it in `finally`. It sends 200 actual HTTP sessions with real Flagsmith assignments; those visitors remain clearly simulated. Recovery is journalled in `.runtime/flagsmith/app-probe-recovery.json`; use `npm.cmd run flagsmith:verify-app -- --restore` if interrupted. Unexpected drift stops restoration for inspection. This proves configuration/app recovery, not an approved autonomous release.
+
+Bite checks treatment sessions against the locally evaluated flag on requests and ends a session if it is no longer eligible. The visible page checks every five seconds, then refreshes after a confirmed change. SDK polling defaults to 15 seconds (about 23040 reads over four days for one running app). Recovery is verified after propagation, never claimed instantaneous. Session events retain their original variant; refresh creates a new session.
 
 Use a dedicated disposable project/environment. **Flagsmith Cloud Free is now the selected path**; self-hosting remains a fallback. Cloud uses `FLAGSMITH_MANAGEMENT_URL=https://api.flagsmith.com/api/v1/`; self-hosting uses `http://localhost:8000/api/v1/`. Do not add a card, enable overages or upgrade to unblock this project. Organisation API keys use `FLAGSMITH_AUTH_SCHEME=Api-Key`; user API tokens use `Token`. Both stay in local `.env`. A separate **server-side SDK key** is needed for local evaluation and can be provisioned through authorized account setup. Management/environment/SDK keys are distinct. Never commit them.
 

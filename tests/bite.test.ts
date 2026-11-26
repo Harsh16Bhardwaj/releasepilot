@@ -26,6 +26,7 @@ before(async () => {
         BITE_PORT: "3198",
         BITE_DATABASE: join(dir, "site.sqlite"),
         FLAGSMITH_SDK_KEY: "",
+        BITE_DISABLE_FLAGSMITH:'true',
       },
       stdio: ["ignore", "pipe", "pipe"],
     },

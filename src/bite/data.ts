@@ -30,7 +30,12 @@ export class BiteData {
     const columns = this.db.prepare("PRAGMA table_info(sessions)").all() as {
       name: string;
     }[];
-    for (const name of ["run_id", "release_id", "stage_id"])
+    for (const name of [
+      "run_id",
+      "release_id",
+      "stage_id",
+      "completion_reason",
+    ])
       if (!columns.some((c) => c.name === name))
         this.db.exec(`ALTER TABLE sessions ADD COLUMN ${name} TEXT`);
     if (!columns.some((c) => c.name === "simulated"))
@@ -88,6 +93,7 @@ export class BiteData {
           completed: number | null;
           run_id: string | null;
           simulated: number;
+          completion_reason: string | null;
         }
       | undefined;
   }
@@ -126,18 +132,18 @@ export class BiteData {
   finalize(now = Date.now()) {
     return this.db
       .prepare(
-        "UPDATE sessions SET completed=last_seen WHERE completed IS NULL AND last_seen<=?",
+        "UPDATE sessions SET completed=last_seen,completion_reason='inactivity' WHERE completed IS NULL AND last_seen<=?",
       )
       .run(now - 30_000).changes;
   }
-  endSession(id: string) {
+  endSession(id: string, reason: "explicit" | "flag_disabled" = "explicit") {
     const s = this.session(id);
     if (!s) throw new Error("Session not found");
     this.db
       .prepare(
-        "UPDATE sessions SET completed=last_seen WHERE id=? AND completed IS NULL",
+        "UPDATE sessions SET completed=last_seen,completion_reason=? WHERE id=? AND completed IS NULL",
       )
-      .run(id);
+      .run(reason, id);
   }
   order(
     session: string,
