@@ -19,6 +19,7 @@
     "discover": "tsx src/cli.ts discover",
     "analyze": "tsx src/cli.ts analyze",
     "flagsmith:probe": "tsx src/cli.ts flagsmith-probe",
+    "flagsmith:setup": "tsx scripts/setup-flagsmith.ts",
     "gate": "tsx src/cli.ts gate",
     "check": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts"

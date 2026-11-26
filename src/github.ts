@@ -13,7 +13,7 @@ export class GitHub {
   }
   async listPRs() { return this.get(`/repos/${this.repo}/pulls?state=open&per_page=100&sort=updated&direction=desc`); }
   async file(path: string, sha: string) {
-    if (/(^|\/)(\.env(?:\..*)?|auth\.json|credentials[^/]*|[^/]*\.(?:pem|key|p12))$/i.test(path)) throw new Error('Credential-like file excluded');
+    if (path!=='.env.example'&&/(^|\/)(\.env(?:\..*)?|auth\.json|credentials[^/]*|[^/]*\.(?:pem|key|p12))$/i.test(path)) throw new Error('Credential-like file excluded');
     const result = await this.get(`/repos/${this.repo}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(sha)}`);
     if (result.type !== 'file' || result.encoding !== 'base64' || result.size > 100_000) throw new Error('Unsupported or oversized context file');
     const content = Buffer.from(result.content, 'base64').toString('utf8');

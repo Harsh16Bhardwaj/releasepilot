@@ -9,7 +9,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync, existsSync, createReadStream } from "node:fs";
 import { join, resolve, extname, sep } from "node:path";
 import { Flagsmith } from "@flagsmith/nodejs";
-import { root, redact } from "../config.js";
+import { root, redact,config } from "../config.js";
 import { menu, categories, priceCart } from "./menu.js";
 import { BiteData, type Version } from "./data.js";
 import { metrics } from "./metrics.js";
@@ -43,11 +43,10 @@ const build = (() => {
     };
   }
 })();
-const sdk = process.env.FLAGSMITH_SDK_KEY
+const sdk = process.env.FLAGSMITH_SDK_KEY && process.env.BITE_DISABLE_FLAGSMITH!=='true'
   ? new Flagsmith({
       environmentKey: process.env.FLAGSMITH_SDK_KEY,
-      apiUrl:
-        process.env.FLAGSMITH_MANAGEMENT_URL || "http://localhost:8000/api/v1/",
+      apiUrl:config().flagsmith.sdkUrl,
       enableLocalEvaluation: true,
       enableAnalytics: false,
       enableEvents: false,
